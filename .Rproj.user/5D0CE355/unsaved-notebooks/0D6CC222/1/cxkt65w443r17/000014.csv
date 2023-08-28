@@ -1,0 +1,12 @@
+"0","plot(airlines$FL_DATE_NEW, airlines$ARR_DELAY)
+"
+"2","Warning in gzfile(file, ""wb"") :"
+"2","
+ "
+"2"," cannot open compressed file '/Users/marcbourleau/Library/CloudStorage/OneDrive-UniversitédeLausanne/ML_Project/.Rproj.user/shared/notebooks/79D88C12-EDA_Marc/1/5D0CE355253687da/cxkt65w443r17_t/3c2ca2b1d12546b6bc5e2ae9b71aad08.snapshot', probable reason 'No such file or directory'
+"
+"2","Error in gzfile(file, ""wb"") : cannot open the connection
+"
+"2","Error in dev.off() : 
+  QuartzBitmap_Output - unable to open file '/Users/marcbourleau/Library/CloudStorage/OneDrive-UniversitédeLausanne/ML_Project/.Rproj.user/shared/notebooks/79D88C12-EDA_Marc/1/5D0CE355253687da/cxkt65w443r17_t/_rs_chunk_plot_001.png'
+"

@@ -1,0 +1,44 @@
+---
+title: "eda marc"
+format: html
+editor: visual
+---
+
+# Use summary, introduce and datatable
+
+Our data set is composed of 28 columns. From these 28 columns, we have 22 continuous, 5 discrete and 1 missing column named *Unnamed..27*, which we will remove. Let's focus on both departure and arrival delays. On average, the departure delay is of 9.97 minutes and arrival delay is of 5.05 minutes. The median for departure is at -2 minutes, whereas it is at -6 minutes for arrival delay. This implies that the majority of American flights in 2018 depart and arrive earlier rather than late. Therefore, we expect the distribution to be right-skewed for both variables. ::: {.callout-tip} \## Fact The arrival of the most delayed flight was delayed by nearly 45 hours. :::
+
+The most delayed flight on arrival has had a delay of almost 45 hours.
+
+In order to create the boxplots, we need to take care of the missing values. Indeed, using *plot_missing* from the *DataExplorer* package, we observe that the delay variables that have more than 80% of missing values.
+
+```{r}
+library(ggplot2)
+library(DataExplorer)
+library(dplyr)
+airlines <- airlines[,-1] # remove last column 
+airlines[, -c(1:2, 4:5, 17, 28)] %>% summary() # remove FL_date, OP-carrier, Origin, Dest and cancellation code
+introduce(airlines)
+hist(airlines$DEP_DELAY)
+hist(airlines$ARR_DELAY)
+plot_missing(airlines) # we have many missing values so we have to exclude NA's to perform the box plot's 
+
+boxplot(airlines$DEP_DELAY, col = "red", main = "Boxplot of Departure Delay", xlab = "Departure", ylab = "Delay in minutes") %>% abline(h = mean(airlines$DEP_DELAY), col = "red", lwd = 2, lty = 2)
+# create a boxplot of arrival delay 
+boxplot(airlines$DEP_ARR, col = "red", main = "Boxplot of Arrival Delay", xlab = "Arrival", ylab = "Delay in minutes", ylim = c(-100, 100)) %>% abline(h = mean(airlines$DEP_ARR), col = "red", lwd = 2, lty = 2)
+
+```
+
+# Check for the seasonality
+
+```{r}
+plot(airlines$FL_DATE_NEW, airlines$ARR_DELAY) 
+library(dplyr)
+airlines %>% 
+  group_by(FL_DATE_NEW = as.Date(FL_DATE_NEW)) %>% 
+  summarise(mean_ARR_DELAY = mean(ARR_DELAY, na.rm = TRUE)) %>%
+  ggplot(aes(x = FL_DATE_NEW, y = mean_ARR_DELAY)) +
+  geom_line()
+
+
+```

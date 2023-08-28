@@ -1,0 +1,81 @@
+# Exploratory data analysis
+
+-   check for missing values: transform the NA's to 0 when there is no delay
+-   around 70% of flights are delayed because of weather conditions: make sure to plot this and talk about it
+-   check for the distribution using histograms, boxplots: outliers?
+
+# Dealing with missing values
+
+```{r}
+library(here)
+airlines <- read.csv(here("data", "2018.csv"))
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+airlines <- airlines %>% 
+  mutate(FL_DATE_NEW = ymd(FL_DATE)) %>% 
+  select(-FL_DATE)
+```
+
+```{r}
+plot_missing(airlines) # check missing values:
+```
+
+By plotting the missing values, we see that we have approximately 80% of NA's for 5 variables: - CARRIER_DELAY - WEATHER_DELAY - NAS_DELAY - SECURITY_DELAY - LATE_AIRCRAFT_DELAY
+
+We think that they should be zeros instead, to represent a non-delay. It would make sense from our assertion from the introduction, stating that around 15% of flights are canceled each year. We need to change the values to 0, and define them as factors (either 1: delay and 0: no delay)
+
+Furthermore, we have a variable with only missing values: Unnamed..27. We will remove it.
+
+```{r}
+library(dplyr)
+
+# Replace NA values with 0 in selected columns
+airlines <- airlines %>% 
+  mutate(
+    CARRIER_DELAY = ifelse(is.na(CARRIER_DELAY), 0, CARRIER_DELAY),
+    WEATHER_DELAY = ifelse(is.na(WEATHER_DELAY), 0, WEATHER_DELAY),
+    NAS_DELAY = ifelse(is.na(NAS_DELAY), 0, NAS_DELAY),
+    SECURITY_DELAY = ifelse(is.na(SECURITY_DELAY), 0, SECURITY_DELAY),
+    LATE_AIRCRAFT_DELAY = ifelse(is.na(LATE_AIRCRAFT_DELAY), 0, LATE_AIRCRAFT_DELAY)
+  )
+
+# Remove Unnamed 27
+airlines <- airlines %>% 
+  select(-Unnamed..27)
+```
+
+```{r}
+plot_missing(airlines) # check missing values:
+```
+
+Next, we have to take care of the last 10 variables containing NA's. The range of missing values for all of these variables goes from ~ 1.5 to 2%. They seem to be somewhat connected between each other just like the ones before. Since our variable of interest *Arr_Delay* is part of them, we have to carefully look at their structure.
+
+Let's first explore our dataset containing only these NA's.
+
+```{r}
+airlines %>% 
+  filter_all(any_vars(is.na(.)))
+```
+
+As per their descriptions, the variables *Taxi_out* and *Taxi_in* are related to: *Wheels_off*, *Wheels_on*, *Dep_time* and *Arr_time*.
+
+What we can notice is that most of the Na's in *Taxi_out* will be associated with an Na in *Taxi_in*. This is true for all of the occurrences where there has been a delay.
+
+When a flight has been diverted, we will only have values for *Taxi_in*, as the flight never reached it's destination.
+
+In rare cases, we have values for *Dep_time* and *Dep_delay* and an NA in *Arr_delay* due to a cancellation. In these cases, the flight seems to have been cancelled almost immediately after taking off.
+
+The NA values for *Arr_delay* are due to one of 3 scenarios:
+  1) Cancellation
+  2) Diverted
+  3) The arrival time is the same as the planned arrival time (Therefore, should be 0)
+  
+Finally, we can see that every time we have an NA for *Air_time*, we will also have one for *Actual_elapsed_time*. It makes sense as the latter is a formula containing the former.
+
+
+
+
+

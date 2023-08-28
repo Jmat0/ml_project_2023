@@ -1,0 +1,12 @@
+# Introduction
+
+-   Overview and Motivation: Air travel has become an integral part of modern life. In 2018, approximately 144 million people, which is nearly half of the American population, traveled on a plane and 15% of all domestic flights were delayed, according to data from the U.S. Department of Transportation. The motivation to build a Machine Learning model that predicts delays is at high stakes for several reasons. Flight delays can cause inconvenience to passengers, result in missed connections, and even lead to financial losses for airlines. Our analysis is solely based on the year 2018, as it's the most recent data that we can work with. During our work, we seek to predict the arrival delay (*ARR_DELAY*), which is the subtraction between planned arrival time (*CRS_ARR_TIME*) and the actual arrival time (*ARR_TIME*). In other words, we seek to predict if a given flight is going to arrive late at destination. Seasonality is very important when analyzing flight delays because the number of delays and their causes can vary depending on the time of year. Factors like weather conditions, holidays, and peak travel periods can all impact flight delays, making it important to account for seasonality in any analysis to gain a complete understanding of the data. For this reasons, we have divided our database into seasons (spring, summer, fall and winter). We seek to compare the metrics during different seasons to gain insights into how flight delays vary over time and identify trends or patterns that may be useful for predicting delays in the future.
+
+-   Related Work: There has been many studies in this area. For this part we need to know what exact machine learning models we are going to apply. So we can compare related work that uses the same / different techniques
+
+-   Research questions: Our main research question is: "Can we accurately predict flight delays and their duration using historical data from US flights in 2018?" To answer to this question, our work is divided in two parts.
+
+    First, we want to establish a general model that predicts if a flight is delayed or not before being inside the plane (classification).
+
+    Secondly, we seek to quantify this delay, in intervals (regression) =  check what airlines use in terms of intervals 
+

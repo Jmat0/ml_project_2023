@@ -1,0 +1,79 @@
+# Data
+
+* Sources
+We are using the data set called *Airline Delay and Cancellation Data*, which is publicly available on **Kaggle** (https://www.kaggle.com/datasets/yuanyuwendymu/airline-delay-and-cancellation-data-2009-2018). It has been imported from the Bureau of Transportation Statistics.
+
+* Description
+We have 28 variables. Below are each one of them with their name, description and type.
+
+-   FL_DATE: Date of the flight (character). 
+-   OP_CARRIER: Airline identifier (character). 
+-   OP_CARRIER_FL_NUM: Flight number (integer).
+-   ORIGIN: Starting Airport Code (character). 
+-   DEST: Destination Airport Code (character).
+-   CRS_DEP_TIME: Planned Departure Time (integer). 
+-   DEP_TIME: Actual Departure Time (numerical). 
+-   DEP_DELAY: Total Delay on Departure in minutes (numerical). 
+-   TAXI_OUT: The time duration elapsed between departure from the origin airport gate and wheels off             (numerical). 
+-   WHEELS_OFF: The time point that the aircraft's wheels leave the ground (numerical). 
+-   WHEELS_ON: The time point that the aircraft's wheels touch on the ground (numerical). 
+-   TAXI_IN: The time duration elapsed between wheels-on and gate arrival at the destination airport              (numerical).
+-   CRS_ARR_TIME: Planned Arrival Time (integer). 
+-   ARR_TIME: Actual Arrival Time (numerical).
+-   ARR_DELAY: Total Delay on Arrival in minutes (numerical). 
+-   CANCELLED: Flight Cancelled; 1 = cancelled, 0 = otherwise (numerical). 
+-   CANCELLATION_CODE: Reason for Cancellation of flight: A - Airline/Carrier; B - Weather; C - National Air      System; D - Security (character). 
+-   DIVERTED: Aircraft landed on airport that out of schedule (numerical). 
+-   CRS_ELAPSED_TIME: Planned time amount needed for the flight trip (numerical). 
+-   ACTUAL_ELAPSED_TIME: AIR_TIME+TAXI_IN+TAXI_OUT (numerical). 
+-   AIR_TIME: The time duration between wheels_off and wheels_on time (numerical). 
+-   DISTANCE: Distance between two airports (numerical). 
+-   CARRIER_DELAY: Delay caused by the airline in minutes (numerical). 
+-   WEATHER_DELAY: Delay caused by weather (numerical). 
+-   NAS_DELAY: Delay caused by air system (numerical). 
+-   SECURITY_DELAY:  Delay caused by security (numerical). 
+-   LATE_AIRCRAFT_DELAY:  Delay caused by security (numerical). 
+
+
+* Wrangling/cleaning
+* Spotting mistakes and missing data (could be part of EDA too)
+* Listing anomalies and outliers (could be part of EDA too)
+
+```{r}
+library(here)
+airlines <- read.csv(here("data", "2018.csv"))
+```
+
+
+We create new data frames based on seasons. They will be useful when we create our models later on, as they will help us to capture seasonality effect. To do so, we first need to convert the variable FL_DATE from character into a date-time format.
+
+```{r}
+library(tidyverse)
+library(lubridate)
+airlines <- airlines %>% 
+  mutate(FL_DATE_NEW = ymd(FL_DATE)) %>% 
+  select(-FL_DATE)
+```
+
+
+Now we create our data frames
+
+```{r}
+# Start with Spring
+# Extract the month from the date using the month() function
+airlines$month <- month(airlines$FL_DATE_NEW)
+df_spring <- subset(airlines, month %in% c(3, 4, 5))
+
+# Summer
+df_summer <- subset(airlines, month %in% c(6, 7, 8))
+
+# Fall
+df_fall <- subset(airlines, month %in% c(9, 10, 11))
+
+# Winter
+df_winter <- subset(airlines, month %in% c(12, 1, 2))
+```
+
+
+
+

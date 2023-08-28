@@ -1,0 +1,24 @@
+---
+title: "Airflight Delay Prediction"
+author: "Julian Changanaqui, Marc Bourleau"
+format:
+  html:
+    toc: true
+    toc_float: true
+    toc_left: true
+    code-fold: true
+    code-summary: "Show the code"
+    css: 
+      - "custom.css"
+---
+# Table of Contents
+
+```{r, echo = FALSE, results='asis'}
+cat("Marc Bourleau<br>")
+cat("<a href='mailto:bourleaumarc@gmail.com'>bourleaumarc@gmail.com</a><br>")
+cat("<a href='https://www.marcbourleau.com/'>Website</a><br><br>")
+
+```
+
+```{r child = c(('intro.qmd'), ('eda.qmd'))}
+```

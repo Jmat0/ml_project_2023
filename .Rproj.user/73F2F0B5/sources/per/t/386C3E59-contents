@@ -1,0 +1,16 @@
+---
+title: "Airflight Delay Prediction"
+author: "Julian Changanaqui, Marc Bourleau"
+format:
+  html:
+    toc: true
+    toc_float: true
+    toc_left: true
+    code-fold: true
+    code-summary: "Show the code"
+    css: 
+      - "custom.css"
+---
+
+```{r child = c(('intro.qmd'),('eda.qmd'),('data.qmd') ,('modelling.qmd'))}
+```

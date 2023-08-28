@@ -1,0 +1,219 @@
+---
+title: "Exploratory Data Analysis"
+author: "Julian, Marc"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    number_sections: yes
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+    theme: "readable"
+---
+
+
+# **1 Collect Initial Data: load packages and data set**
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+packages <- c("tidyverse", "DataExplorer", "here", "DT","dplyr", "ggplot2", "lubridate", "heatmaply", "kableExtra")
+loaded <- sapply(packages, require, character.only = TRUE)
+if (any(!loaded)) { # ! used as a negation. If there is a library which is not loaded (false), then install.package
+  install.packages(packages[!loaded])
+}
+airlines <- read.csv(here("data", "2018.csv")) # import data set
+```
+
+# **2 Describe Data**
+
+The initial analysis of our database involves the examination of the main structure using the functions *str*, *summary* and *datatable* functions.
+
+Our data set contains 7,213,446 records of American domestic flights in 2018, with 28 variables in total. Of these variables, 22 are continuous, 5 are discrete, and 1 is missing (*Unnamed..27*, which will be removed).
+Let's focus on both departure and arrival delays. On average, the departure delay is of 9.97 minutes and arrival delay is of 5.05 minutes. The median for departure is at -2 minutes, whereas at -6 minutes for arrival delay. This implies that the majority of American flights in 2018 departed and arrived earlier rather than late. Therefore, we expect the distribution to be right-skewed for both variables. We will explore more in depth the variables of interest after taking care of the missing values. 
+
+::: callout-tip
+## Fact
+The majority of domestic flights in the USA in 2018 either departed or arrived earlier than scheduled. 
+Most delayed flight on arrival was of 45 hours!
+:::
+
+```{r}
+str(airlines)
+summary(airlines)
+introduce(airlines)
+```
+
+## **2.1 Dealing with missing values**
+
+We start by muting the variable *FL_DATE* into a date type under the name *FL_DATE_NEW*.
+
+```{r}
+airlines <- airlines %>% 
+  mutate(FL_DATE_NEW = ymd(FL_DATE)) %>% 
+  select(-FL_DATE)
+str(airlines$FL_DATE_NEW)
+```
+
+```{r}
+plot_missing(airlines) # check missing values
+```
+
+By plotting the missing values, we see that we have approximately 80% of NA's for 5 variables: *Carrier_delay", "Weather_delay", "Nas_delay", "Security delay", "Late Aircraft Delay".
+
+Based on our assertion from the introduction, where we stated that approximately 15% of flights are cancelled each year, we believe that it would be appropriate to treat non-delayed flights as a separate category by assigning a value of 0 to them. Therefore, we need to modify the existing delay values in our dataset and change them to 0 to reflect a non-delay. Additionally, we will convert the modified delay values into a factor variable with two levels: 1 for delays and 0 for no delay. This will allow us to analyze the data more accurately and distinguish between delayed and non-delayed flights.
+
+Furthermore, we have a variable with only missing values: *Unnamed..27*, which we removed. 
+
+```{r}
+# Replace NA values with 0 in selected columns
+airlines <- airlines %>% 
+  mutate(
+    CARRIER_DELAY = ifelse(is.na(CARRIER_DELAY), 0, CARRIER_DELAY),
+    WEATHER_DELAY = ifelse(is.na(WEATHER_DELAY), 0, WEATHER_DELAY),
+    NAS_DELAY = ifelse(is.na(NAS_DELAY), 0, NAS_DELAY),
+    SECURITY_DELAY = ifelse(is.na(SECURITY_DELAY), 0, SECURITY_DELAY),
+    LATE_AIRCRAFT_DELAY = ifelse(is.na(LATE_AIRCRAFT_DELAY), 0, LATE_AIRCRAFT_DELAY)
+  )
+
+# Remove Unnamed 27
+airlines <- airlines %>% 
+  select(-Unnamed..27)
+```
+We plot again the missing values to check whether there have been improvements. Indeed, we observe that the percentage of missing values has decreased from 80% to 1.9%. The maximum number of NA's is 1.9% for *Arr_delay*. 
+```{r}
+plot_missing(airlines) # check missing values:
+```
+
+Next, we have to take care of the last 10 variables containing NA's. The range of missing values for all of these variables goes from \~ 1.5 to 2%. They seem to be somewhat connected between each other just like the ones before. Since our variable of interest *Arr_Delay* is part of them, we have to carefully look at their structure.
+
+Let's first explore our dataset containing only these NA's.
+
+```{r, echo = FALSE}
+airlines %>% 
+  filter_all(any_vars(is.na(.))) %>%
+  slice(1:5) %>%
+  kable()
+```
+
+
+```{r}
+# Let's explore the NA's: we compute the % of cancellation flights to see if they correspond to the % of missing values of: DEP_TIME, DEP_DELAY, TAXI_OUT, WHEELS_OFF, WHEELS_ON, TAXI_IN, ARR_TIME, ARR_DELAY:
+freq <- table(airlines$CANCELLED)
+perc_1 <- freq[2] / length(airlines$CANCELLED) * 100
+perc_0 <- freq[1] / length(airlines$CANCELLED) * 100
+cat("Percentage of 1's:", round(perc_1, 2), "%\n")
+cat("Percentage of 0's:", round(perc_0, 2), "%\n")
+```
+
+As per their descriptions, the variables *Taxi_out* and *Taxi_in* are related to: *Wheels_off*, *Wheels_on*, *Dep_time* and *Arr_time*.
+
+If a flight is cancelled, it means that the aircraft did not depart from the origin airport and did not arrive at the destination airport. Therefore, it is expected that variables related to departure and arrival times (such as *Dep_time*, *Dep_delay*, *Taxi_out*, *Wheels_off*, *Wheels_on*, *Taxi_in*, *Arr_time*, and *Arr_delay*) would be represented as NA's for cancelled flights.
+
+It is also noteworthy that some of the variables that are represented as NA's for cancelled flights (specifically, *Wheels_off* and *Taxi_out*) account for approximately 1.65% of the total observations in the dataset. This indicates that a relatively small proportion of flights in the dataset were cancelled, and that missing values for *Wheels_off* and *Taxi_out* are likely indicators of cancelled flights. 
+
+We can notice that most of the Na's in *Taxi_out* will be associated with a missing value in *Taxi_in*. This is true for all of the occurrences where there has been a delay.
+
+When a flight has been diverted, we will only have values for *Taxi_in*, as the flight never reached it's destination.
+
+In rare cases, we have values for *Dep_time* and *Dep_delay* and an NA in *Arr_delay* due to a cancellation. In these cases, the flight seems to have been cancelled almost immediately after taking off.
+
+The NA values for *Arr_delay* are due to one of 3 scenarios: 1) Cancellation 2) Diverted 3) The arrival time is the same as the planned arrival time (Therefore, should be 0)
+
+Finally, we can see that every time we have an NA for *Air_time*, we will also have one for *Actual_elapsed_time*. It makes sense as the latter is a formula containing the former.
+
+## *2.2 Distribution: histograms*
+
+As stated in the first section, we observe that *Arr_delay* and *Dep_delay* are right-skewed - implying that the majority of domestic flights in the US in 2018 departed/arrived earlier than scheduled.  
+```{r}
+hist(airlines$DEP_DELAY, main = "Histogram of departure delay", xlab = "Departure delay")
+hist(airlines$ARR_DELAY, main = "Histogram of arrival delay", xlab = "Arrival delay")
+# create a boxplot of arrival delay 
+boxplot(airlines$DEP_DELAY, col = "red", main = "Boxplot of Departure Delay", xlab = "Departure", ylab = "Delay in minutes") %>% abline(h = mean(airlines$DEP_DELAY), col = "red", lwd = 2, lty = 2)
+# create a boxplot of arrival delay 
+#boxplot(airlines$DEP_ARR, col = "red", main = "Boxplot of Arrival Delay", xlab = "Arrival", ylab = "Delay in minutes", ylim = c(-100, 100)) %>% abline(h = mean(airlines$DEP_ARR), col = "red", lwd = 2, lty = 2)
+
+
+```
+## *2.3 Seasonality?* 
+### *2.3.1 Number of flights* 
+In order to check for seasonality, we are going to create the variable *Season*, which partitions the *FL_DATE_NEW* for each season (3 months).We observe that across seasons we don't see a huge variation of number of flights. 
+```{r}
+# Partition date into seasons (every 3 months)
+airlines$season <- cut(month(airlines$FL_DATE_NEW), 
+                          breaks=c(0,3,6,9,12), 
+                          labels=c("Winter","Spring","Summer","Fall"))
+flights_count <- airlines %>%
+  group_by(season) %>%
+  summarise(count = n())
+
+# Now you can create the bar plot using "flights_count" data frame:
+ggplot(flights_count, aes(x = season, y = count, fill = season)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Number of Flights per Season", x = "Season", y = "Number of flights")
+```
+
+
+### *2.3.1 Response variable*
+
+According to the bar plot, Summer is the season with the highest average arrival delay across all flights. 
+```{r, warning = FALSE}
+# Plot the average "ARR_DELAY" for each season using the ggplot2 library. 
+ggplot(airlines, aes(x = season, y = ARR_DELAY, fill = season)) + 
+  stat_summary(fun = mean, geom = "bar") +
+  labs(title = "Average arrival delay by season", x = "Season", y = "Average Arrival Delay")
+
+
+plot(airlines$FL_DATE_NEW, airlines$ARR_DELAY) 
+
+airlines %>% 
+  group_by(FL_DATE_NEW = as.Date(FL_DATE_NEW)) %>% 
+  summarise(mean_ARR_DELAY = mean(ARR_DELAY, na.rm = TRUE)) %>%
+  ggplot(aes(x = FL_DATE_NEW, y = mean_ARR_DELAY)) +
+  geom_line()
+
+```
+
+
+
+## *2.4 Outliers*
+
+## *2.5 Correlation*
+```{r}
+# We remove non-numeric variables (character and dates)
+# airlines_num <- airlines[, -c(1:5, 14:16, 23, 26)] # remove FL_date, OP-carrier, Origin, Dest and cancellation code
+# heatmaply_cor(
+#   cor(airlines),
+#   xlab = "Features", 
+#   ylab = "Features",
+#   k_col = 2, 
+#   k_row = 2,
+#   cellwidtrh = 40
+# )
+```
+
+## *2.6 Exploring variables*
+### *2.6.1 Top 10 Airports with highest departures*
+```{r}
+origin_count <- airlines %>%
+  group_by(ORIGIN) %>%
+  summarise(count = n()) %>% 
+  top_n(10, count) %>% 
+  arrange(desc(count))
+ggplot(origin_count, aes(x = ORIGIN, y = count, fill = ORIGIN)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 10 Airports with highest departure flights", x = "Airport name", y = "Number of flights departing")
+```
+### *2.6.2 Top 10 Airports with highest arrivals*
+```{r}
+arrival_count <- airlines %>%
+  group_by(DEST) %>%
+  summarise(count = n()) %>% 
+  top_n(10, count) %>% 
+  arrange(desc(count))
+ggplot(arrival_count, aes(x = DEST, y = count, fill = DEST)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Top 10 Airports with highest arrival flights", x = "Airport name", y = "Number of flights arriving")
+```
+
+
